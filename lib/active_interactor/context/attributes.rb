@@ -26,16 +26,16 @@ module ActiveInteractor
         #   #=> [:first_name, :last_name]
         #
         # @return [Array<Symbol>] the defined attributes
-        def attributes(*attributes)
-          return __attributes if attributes.empty?
+        def attributes(*attrs)
+          attrs.compact.uniq.each do |attr|
+            attribute(attr)
+          end
 
-          @__attributes = __attributes.concat(attributes.map(&:to_sym)).compact.uniq.sort
+          attribute_names.sort.collect(&:to_sym)
         end
 
-        private
-
-        def __attributes
-          @__attributes ||= []
+        def has_attribute?(attr_name)
+          attribute_types.key?(attr_name.to_s)
         end
       end
 
@@ -48,6 +48,16 @@ module ActiveInteractor
         copy_flags!(context)
         copy_called!(context)
         super
+
+        values = if context.respond_to?(:attributes)
+          context.attributes
+        else
+          context
+        end
+
+        values.each do |key, value|
+          public_send("#{key}=", value)
+        end
       end
 
       # Get values defined on the instance of {Base context} whose keys are defined on the {Base context} class'
@@ -69,9 +79,7 @@ module ActiveInteractor
       #
       # @return [Hash{Symbol => *}] the defined attributes and values
       def attributes
-        self.class.attributes.each_with_object({}) do |attribute, hash|
-          hash[attribute] = self[attribute] if self[attribute]
-        end
+        super.symbolize_keys
       end
 
       # Merge an instance of {Base context} into the calling {Base context} instance
@@ -93,6 +101,10 @@ module ActiveInteractor
           self[key] = value unless value.nil?
         end
         self
+      end
+
+      def has_attribute?(attr_name)
+        @attributes.key?(attr_name.to_s)
       end
 
       private

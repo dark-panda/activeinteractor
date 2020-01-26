@@ -3,29 +3,30 @@
 require 'spec_helper'
 
 RSpec.describe ActiveInteractor::Context::Base do
-  after(:each) { described_class.instance_variable_set('@__attributes', []) }
+  before do
+    stub_const('DummyContext', Class.new(described_class))
+  end
 
   describe '#attributes' do
     context 'when no arguments are passed' do
-      subject { described_class.attributes }
-      it { is_expected.to eq [] }
+      it { expect(DummyContext.attributes).to eq [] }
 
       context 'when an attribute :foo was previously defined' do
-        before { described_class.instance_variable_set('@__attributes', %i[foo]) }
+        before { DummyContext.attributes(:foo) }
 
-        it { is_expected.to eq %i[foo] }
+        it { expect(DummyContext.attributes).to eq %i[foo] }
       end
     end
 
     context 'when given arguments :foo and :bar' do
-      subject { described_class.attributes(:foo, :bar) }
+      before { DummyContext.attributes(:foo, :bar) }
 
-      it { is_expected.to eq %i[bar foo] }
+      it { expect(DummyContext.attributes).to eq %i[bar foo] }
 
       context 'when an attribute :foo was previously defined' do
-        before { described_class.instance_variable_set('@__attributes', %i[foo]) }
+        before { DummyContext.attributes(:foo) }
 
-        it { is_expected.to eq %i[bar foo] }
+        it { expect(DummyContext.attributes).to eq %i[bar foo] }
       end
     end
   end
@@ -35,7 +36,7 @@ RSpec.describe ActiveInteractor::Context::Base do
 
     context 'with class attributes []' do
       context 'with an instance having attributes { :foo => "foo", :bar => "bar", :baz => "baz" }' do
-        let(:instance) { described_class.new(foo: 'foo', bar: 'bar', baz: 'baz') }
+        let(:instance) { DummyContext.new(foo: 'foo', bar: 'bar', baz: 'baz') }
 
         it { is_expected.to be_a Hash }
         it { is_expected.to be_empty }
@@ -43,10 +44,10 @@ RSpec.describe ActiveInteractor::Context::Base do
     end
 
     context 'with class attributes [:foo, :bar, :baz]' do
-      before { described_class.attributes(:foo, :bar, :baz) }
+      before { DummyContext.attributes(:foo, :bar, :baz) }
 
       context 'with an instance having attributes { :foo => "foo", :bar => "bar", :baz => "baz" }' do
-        let(:instance) { described_class.new(foo: 'foo', bar: 'bar', baz: 'baz') }
+        let(:instance) { DummyContext.new(foo: 'foo', bar: 'bar', baz: 'baz') }
 
         it { is_expected.to be_a Hash }
         it { is_expected.to eq(bar: 'bar', baz: 'baz', foo: 'foo') }
@@ -60,7 +61,7 @@ RSpec.describe ActiveInteractor::Context::Base do
       instance.called!(interactor2)
     end
 
-    let(:instance) { described_class.new }
+    let(:instance) { DummyContext.new }
     let(:interactor1) { double(:interactor1) }
     let(:interactor2) { double(:interactor2) }
 
@@ -73,7 +74,7 @@ RSpec.describe ActiveInteractor::Context::Base do
 
   describe '#fail!' do
     subject { instance.fail!(errors) }
-    let(:instance) { described_class.new }
+    let(:instance) { DummyContext.new }
 
     context 'with errors equal to nil' do
       let(:errors) { nil }
@@ -95,7 +96,7 @@ RSpec.describe ActiveInteractor::Context::Base do
 
     context 'with errors from another instance on the attribute :foo' do
       let(:errors) { instance2.errors }
-      let(:instance2) { described_class.new }
+      let(:instance2) { DummyContext.new }
 
       before { instance2.errors.add(:foo, 'foo') }
 
