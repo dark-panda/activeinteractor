@@ -112,8 +112,21 @@ module ActiveInteractor
       def merge_attribute_values(context)
         return unless context
 
-        values = context.respond_to?(:attributes) ? context.attributes : context
-        values.each { |key, value| public_send("#{key}=", value) }
+        if attribute_names.present?
+          attribute_names.each do |attr|
+            value = if context.respond_to?(attr)
+                      context.public_send(attr)
+                    elsif context.respond_to?(:[])
+                      context[attr.to_sym]
+                    end
+
+            public_send("#{attr}=", value)
+          end
+        else
+          values = context.respond_to?(:attributes) ? context.attributes : context
+
+          values.each { |key, value| public_send("#{key}=", value) }
+        end
       end
 
       def merge_errors!(errors)

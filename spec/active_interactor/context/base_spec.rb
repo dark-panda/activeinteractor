@@ -342,6 +342,30 @@ RSpec.describe ActiveInteractor::Context::Base do
         end
       end
     end
+
+    context 'without explicit attributes' do
+      before do
+        stub_const('DummyContextA', Class.new(described_class))
+
+        stub_const('DummyContextB', Class.new(described_class) do
+          attributes :foo, :bar
+        end)
+      end
+
+      it 'handles merging' do
+        context_a = DummyContextA.new(foo: 'hello', bar: 'world', baz: 'blort')
+
+        expect(context_a.foo).to eq 'hello'
+        expect(context_a.bar).to eq 'world'
+        expect(context_a.baz).to eq 'blort'
+
+        context_b = DummyContextB.new(context_a)
+
+        expect(context_b.foo).to eq 'hello'
+        expect(context_b.bar).to eq 'world'
+        expect(context_b.baz).to eq 'blort'
+      end
+    end
   end
 
   describe '#rollback!' do
